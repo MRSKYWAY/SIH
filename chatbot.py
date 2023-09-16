@@ -1,5 +1,7 @@
 import streamlit as st
 from transformers import GPTNeoForCausalLM, GPT2Tokenizer
+import random
+import time
 
 model_path = "/Users/maymay/Desktop/BARD API/model"
 tokenizer = GPT2Tokenizer.from_pretrained(model_path)
@@ -11,21 +13,10 @@ def chat_with_bot(user_input):
     bot_response = tokenizer.decode(response_ids[0], skip_special_tokens=True)
     return bot_response
 
-# Create a title for your app
+
 st.title("Chatbot")
 
-# # Define a function to simulate the chatbot's response
-# def chatbot_response(user_input):
-#     # Here, you can replace this logic with a real chatbot, like GPT-3.
-#     # For simplicity, we'll just return a random response.
-#     responses = [
-#         "Hello! How can I assist you today?",
-#         "Tell me more...",
-#         "I'm not sure I understand. Could you rephrase that?",
-#     ]
-#     return responses
 
-# Add CSS to create space (padding)
 st.markdown(
     """
     <style>
@@ -37,28 +28,49 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Create a text input box for the user to enter messages
-user_input = st.text_input("You:", "")
 
-# Check if the user has entered a message
-if user_input:
-    # Display the user's message
-    st.text("You: " + user_input)
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-    # Get the chatbot's response
-    bot_response = chat_with_bot(user_input)
 
-    # Display the chatbot's response
-    st.text("Chatbot: " + bot_response)
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-    # Add the user's message to the chat history
-    # chat_history.append(("User", user_input))
 
-# Display the chat history
-# st.subheader("Chat History:")
-# for speaker, message in chat_history:
-#     st.text(f"{speaker}: {message}")
+if prompt := st.chat_input("Send a message"):
+    
+    st.chat_message("user").markdown(prompt)
+    
+    st.session_state.messages.append({"role": "user", "content": prompt})
 
-# Add a button to clear the chat
-if st.button("Clear Chat"):
+    response = f"Echo: {prompt}"
+
+with st.chat_message("user"):
+    st.markdown(prompt)
+
+with st.chat_message("assistant"):
+    message_placeholder = st.empty()
+    full_response = ""
+    assistant_response = random.choice(
+        [
+            "Hello there! How can I assist you today?",
+            "Hi, human! Is there anything I can help you with?",
+            "Do you need help?",
+        ]
+    )
+    
+    for chunk in assistant_response.split():
+        full_response += chunk + " "
+        time.sleep(0.05)
+        
+        message_placeholder.markdown(full_response + "▌")
+    message_placeholder.markdown(full_response)
+
+st.session_state.messages.append({"role": "assistant", "content": full_response})
+
+
+    
+if st.button("Clear Recent Chat"):
+    st.session_state.messages.clear()
     st.text("Chatbot: Chat cleared.")
